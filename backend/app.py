@@ -1,12 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, send_from_directory, jsonify
 from transformers import pipeline
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
 sentiment_pipeline = pipeline("sentiment-analysis")
 
-@app.route('/api/data')
-def get_data():
-    return jsonify({'message': 'Hello from Flask!'})
+@app.route('/')
+def serve():
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/api/submit-url', methods=['POST'])
 def submit_url():

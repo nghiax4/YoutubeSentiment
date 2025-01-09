@@ -7,7 +7,7 @@ function App() {
 
   const handleSubmit = async () => {
     if (!input) {
-      alert("Please enter a URL")
+      alert("Please enter something")
       return
     }
 
@@ -25,7 +25,7 @@ function App() {
   return (
     <>
       <h1 className="text-center font-bold">Youtube video Sentiment Analyzer</h1>
-      <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter a URL" />
+      <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter text" />
       <button onClick={handleSubmit}>Submit</button>
       <h2>{sentiment}</h2>
     </>
