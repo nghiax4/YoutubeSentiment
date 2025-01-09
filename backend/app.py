@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
+from transformers import pipeline
 
 app = Flask(__name__)
+sentiment_pipeline = pipeline("sentiment-analysis")
 
 @app.route('/api/data')
 def get_data():
@@ -9,17 +11,19 @@ def get_data():
 @app.route('/api/submit-url', methods=['POST'])
 def submit_url():
     data = request.get_json()
-    url = data.get('url')
+    print('Chat wtf is this:\n', data)
 
-    for i in range(10**8):
-        i += i
+    text = data.get('text')
 
-    if not url:
-        return jsonify({'error': 'No URL provided'}), 400
+    if not text:
+        return jsonify({'error': 'No Text provided'}), 400
 
-    print(f'Received URL: {url}')
+    print(f'Received Text: {text}')
+
+    out = sentiment_pipeline(text)
+
     # Process the URL here (e.g., save it, fetch data, etc.)
-    return jsonify({'message': 'URL received successfully', 'url': url}), 200
+    return jsonify({'message': 'Text sentiment analyzed successfully', 'result': out}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
