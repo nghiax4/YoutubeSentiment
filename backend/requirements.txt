@@ -45,7 +45,6 @@ pure_eval @ file:///home/conda/feedstock_root/build_artifacts/pure_eval_17335694
 Pygments @ file:///home/conda/feedstock_root/build_artifacts/pygments_1736243443484/work
 PySocks @ file:///C:/ci/pysocks_1605307512533/work
 python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/python-dateutil_1733215673016/work
-pywin32==305.1
 PyYAML @ file:///C:/b/abs_14xkfs39bx/croot/pyyaml_1728657968772/work
 pyzmq @ file:///D:/bld/pyzmq_1666828546753/work
 regex==2024.11.6
