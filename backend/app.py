@@ -1,5 +1,5 @@
 from flask import Flask, request, send_from_directory, jsonify
-import model_utilities  # Import the sentiment analysis utility
+import model_util  # Import the sentiment analysis utility
 
 # Initialize Flask app
 app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
@@ -47,7 +47,7 @@ def analyze_text():
     print(f'Received Text: {text}')
 
     # Perform sentiment analysis using the imported utility function
-    out = model_utilities.get_total_sentiment(text)
+    out = model_util.get_total_sentiment(text)
 
     # Return the sentiment analysis result as a JSON response
     return jsonify({'message': 'Text sentiment analyzed successfully', 'result': out}), 200
@@ -67,10 +67,34 @@ def analyze_text_prog():
     # Log the received text for debugging purposes
     print(f'Received Text: {text}')
 
+    words_count = len(text.split(' '))
+
+    max_word_count = 20 if words_count <= 100 else 50 if words_count <= 250 else 100 if words_count <= 250 else 150
+
     # Perform sentiment analysis using the imported utility function
-    out = model_utilities.get_segmented_sentiment_wordcount(text=text, max_word_count=150)
+    out = model_util.get_segmented_sentiment_wordcount(text=text, max_word_count=max_word_count)
 
     # Return the sentiment analysis result as a JSON response
+    return jsonify({'message': 'Text sentiment analyzed successfully', 'result': out}), 200
+
+@app.route('/api/analyze-youtube', methods=['POST'])
+def analyze_youtube():
+    from youtube_transcript_api import YouTubeTranscriptApi
+    
+    data = request.get_json()
+
+    video_id = data.get('video_id')
+
+    print(f'Received video id: {video_id}')
+
+    transcript = YouTubeTranscriptApi.get_transcript(video_id)
+
+    video_length = transcript[-1]['start'] + transcript[-1]['duration']
+
+    second_split = 20 if video_length <= 150 else 40 if video_length <= 300 else 60
+
+    out = model_util.get_segmented_sentiment_youtubecaption(data=transcript, second=second_split)
+
     return jsonify({'message': 'Text sentiment analyzed successfully', 'result': out}), 200
 
 # Run the Flask app in debug mode (useful for development)

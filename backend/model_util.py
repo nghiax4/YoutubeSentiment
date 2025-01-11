@@ -1,5 +1,4 @@
 from typing import List
-import torch
 from transformers import pipeline
 
 # Create a sentiment analysis pipeline using the pretrained model
@@ -67,6 +66,7 @@ def get_segmented_sentiment_youtubecaption(data: List[dict], second: int) -> Lis
     - data (List[dict]): A list of dictionaries, where each dictionary contains:
         - 'start' (float): Start time of the text in seconds.
         - 'text' (str): The text content.
+        - 'duration' (float)
     - second (int): Time interval (in seconds) for segmenting the text.
 
     Returns:
