@@ -36,10 +36,12 @@ def get_total_sentiment(text: str) -> List[float]:
     - List[float]: A list containing [negative sentiment probability, positive sentiment probability].
     """
     # Split the text into smaller (overlapping) chunks that would fit the model (note: This only works for MOST texts, sometimes the tokenizer still gives >512 tokens)
-    chunks = chunk_text(text=text, max_word_count=400, overlap=20)
+    #chunks = chunk_text(text=text, max_word_count=400, overlap=20)
     
     # Perform sentiment analysis on each chunk
-    result = pipe(chunks)
+    #result = pipe(chunks)
+
+    result = pipe([text])
     
     # Convert model output to probabilities for negative and positive sentiment
     all_probabilities = [
