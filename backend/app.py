@@ -5,7 +5,7 @@ import model_util  # Import the sentiment analysis utility
 app = Flask(__name__, static_folder='../frontend/dist', static_url_path='/')
 
 # Serve the frontend (e.g., React/Vue/Angular app) from the 'dist' folder
-#@app.route('/')
+@app.route('/')
 def serve():
     """
     Serves the main frontend page (index.html) when the root URL is accessed.
