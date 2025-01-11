@@ -3,7 +3,7 @@ import axios from "axios"
 
 function App() {
   const [input, setInput] = useState("")
-  const [sentiment, setSentiment] = useState("Please enter text")
+  const [sentiment, setSentiment] = useState([[0, 0]])
 
   const handleSubmit = async () => {
     if (!input) {
@@ -12,22 +12,38 @@ function App() {
     }
 
     try {
-      const response = await axios.post("/api/submit-url", { 'text': input })
+      const response = await axios.post("/api/analyze-text-prog", { text: input })
       console.log("Response from Flask:", response.data)
-      //alert("Text submitted successfully!")
-      setSentiment(response.data.result[0].label + ", " + response.data.result[0].score)
+      setSentiment(response.data.result)
     } catch (error) {
-      console.error("Error sending text:", error)
-      alert("Failed to send text.")
+      console.error("Some random error happened:", error)
+      alert("Unexpected error occurred.")
     }
   }
+
+  // Transform sentiment data into a format compatible with Recharts
+  const chartData = sentiment.map((senti) => ({
+    position: senti[2], // Text position (x-axis)
+    positive: senti[1], // Positive probability (y-axis)
+  }));
 
   return (
     <>
       <h1 className="text-center font-bold">Youtube video Sentiment Analyzer</h1>
-      <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter text" />
+      <textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Enter your text here"
+        rows={10} // Number of visible rows
+        cols={50} // Width of the textarea
+      ></textarea>
       <button onClick={handleSubmit}>Submit</button>
-      <h2>{sentiment}</h2>
+      <h2>
+        {sentiment.map((senti, index) => (
+          <li key={index}>{senti[0]}, {senti[1]}, {senti[2]}</li>
+        ))
+        }
+      </h2>
     </>
   )
 }
