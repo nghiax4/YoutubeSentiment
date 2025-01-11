@@ -22,6 +22,7 @@ def chunk_text(text: str, max_word_count: int = 400, overlap: int = 20):
         # Create a chunk of words
         chunk = ' '.join(words[i:i + max_word_count])
         chunks.append(chunk)
+    print('some text chunk:', chunks)
     return chunks
 
 
