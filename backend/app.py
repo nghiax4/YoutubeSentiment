@@ -69,10 +69,12 @@ def analyze_text_prog():
 
     words_count = len(text.split(' '))
 
-    max_word_count = 20 if words_count <= 100 else 50 if words_count <= 250 else 100 if words_count <= 250 else 150
+    #max_word_count = 20 if words_count <= 100 else 50 if words_count <= 250 else 100 if words_count <= 250 else 150
+    max_word_count = 20
 
     # Perform sentiment analysis using the imported utility function
-    out = model_util.get_segmented_sentiment_wordcount(text=text, max_word_count=max_word_count)
+    #out = model_util.get_segmented_sentiment_wordcount(text=text, max_word_count=max_word_count)
+    out = model_util.get_segmented_sentiment_wordcount_two(text=text, max_word_count=max_word_count)
 
     # Return the sentiment analysis result as a JSON response
     return jsonify({'message': 'Text sentiment analyzed successfully', 'result': out}), 200

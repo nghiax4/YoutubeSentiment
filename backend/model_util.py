@@ -129,3 +129,35 @@ def get_segmented_sentiment_wordcount(text: str, max_word_count: int) -> List[Li
         [all_probabilities[i][0], all_probabilities[i][1], starting_indices[i]]
         for i in range(len(chunks))
     ]
+
+def get_segmented_sentiment_wordcount_two(text: str, max_word_count: int) -> List[List[float]]:
+    """
+    Segments the input text into chunks based on a word count limit,
+    analyzes sentiment for each chunk, and combines the results with starting indices.
+
+    Parameters:
+    - text (str): The input text to analyze.
+    - max_word_count (int): Maximum number of words per chunk.
+
+    Returns:
+    - List[List[float]]: A list of [negative probability, positive probability, starting index].
+    """
+    words = text.split(' ')  # Split text into words for indexing
+    results = []             # Final list to store results
+
+    # Iterate over chunks and calculate sentiment probabilities
+    for i in range(0, len(words), max_word_count):
+        # Create the chunk for the current segment
+        chunk = ' '.join(words[i:i + max_word_count])
+
+        # Perform sentiment analysis using pipe
+        result = pipe(chunk)[0]  # Analyze one chunk at a time
+        probabilities = (
+            [result['score'], 1 - result['score']] if result['label'] == 'NEGATIVE'
+            else [1 - result['score'], result['score']]
+        )
+
+        # Append the sentiment probabilities along with the starting index
+        results.append([probabilities[0], probabilities[1], i])
+
+    return results
