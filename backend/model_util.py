@@ -49,21 +49,22 @@ def get_total_sentiment(text: str) -> List[float]:
     #     for tmp in result
     # ]
 
-    all_probabilities = []
+    sum_probabilities = [0, 0]
 
     for chunk in chunks:
-        #print(len(chunk), chunk[:5], "\n\n")
         result = pipe(chunk)[0]  # Analyze one chunk at a time
-        probabilities = [result['score'], 1 - result['score']] if result['label'] == 'NEGATIVE' else [1 - result['score'], result['score']]
-        all_probabilities.append(probabilities)
+        probabilities = (
+            [result['score'], 1 - result['score']] if result['label'] == 'NEGATIVE'
+            else [1 - result['score'], result['score']]
+        )
+        
+        for i in range(2):  # Iterate over negative (0) and positive (1) indices
+            sum_probabilities[i] += probabilities[i]
 
-    print('probs:', all_probabilities)  # Debugging: Print probabilities for each chunk
+    print('Final probs:', sum_probabilities)  # Debugging
 
     # Calculate the average probabilities for negative and positive sentiment
-    average_probabilities = [
-        float(sum(probs[i] for probs in all_probabilities) / len(all_probabilities))
-        for i in range(len(all_probabilities[0]))
-    ]
+    average_probabilities = [sum_prob / len(chunks) for sum_prob in sum_probabilities]
 
     return average_probabilities
 
