@@ -65,7 +65,7 @@ def analyze_text_prog():
         return jsonify({'error': 'No Text provided'}), 400  # Return an error if 'text' is missing
 
     # Log the received text for debugging purposes
-    print(f'Received Text: {text}')
+    #print(f'Received Text: {text}')
 
     words_count = len(text.split(' '))
 

@@ -19,10 +19,11 @@ def chunk_text(text: str, max_word_count: int = 400, overlap: int = 20):
     words = text.split(' ')
     chunks = []
     for i in range(0, len(words), max_word_count - overlap):
+        print('Somethin somethin ', ' '.join(words[i:i + max_word_count]), '\n\n')
         # Create a chunk of words
         chunk = ' '.join(words[i:i + max_word_count])
         chunks.append(chunk)
-    print('some text chunk:', chunks)
+    #print('some text chunk:', chunks)
     return chunks
 
 
@@ -36,8 +37,8 @@ def get_total_sentiment(text: str) -> List[float]:
     Returns:
     - List[float]: A list containing [negative sentiment probability, positive sentiment probability].
     """
-    # Split the text into smaller (overlapping) chunks that would fit the model (note: This only works for MOST texts, sometimes the tokenizer still gives >512 tokens)
-    chunks = chunk_text(text=text, max_word_count=75, overlap=10)
+    # Split the text into TINY chunks to avoid exceeding Render's memory limit
+    chunks = chunk_text(text=text, max_word_count=20, overlap=10)
     
     # Perform sentiment analysis on each chunk
     #result = pipe(chunks)
@@ -51,6 +52,7 @@ def get_total_sentiment(text: str) -> List[float]:
     all_probabilities = []
 
     for chunk in chunks:
+        #print(len(chunk), chunk[:5], "\n\n")
         result = pipe(chunk)[0]  # Analyze one chunk at a time
         probabilities = [result['score'], 1 - result['score']] if result['label'] == 'NEGATIVE' else [1 - result['score'], result['score']]
         all_probabilities.append(probabilities)
