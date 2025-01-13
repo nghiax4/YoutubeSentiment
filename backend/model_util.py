@@ -23,7 +23,7 @@ def chunk_text(text: str, max_word_count: int = 400, overlap: int = 20):
         # Create a chunk of words
         chunk = ' '.join(words[i:i + max_word_count])
         chunks.append(chunk)
-    #print('some text chunk:', chunks)
+
     return chunks
 
 
@@ -38,33 +38,21 @@ def get_total_sentiment(text: str) -> List[float]:
     - List[float]: A list containing [negative sentiment probability, positive sentiment probability].
     """
     # Split the text into TINY chunks to avoid exceeding Render's memory limit
-    chunks = chunk_text(text=text, max_word_count=20, overlap=10)
+    chunks = chunk_text(text=text, max_word_count=100, overlap=20)
     
     # Perform sentiment analysis on each chunk
-    #result = pipe(chunks)
+    result = pipe(chunks)
     
     # Convert model output to probabilities for negative and positive sentiment
-    # all_probabilities = [
-    #     [tmp['score'], 1 - tmp['score']] if tmp['label'] == 'NEGATIVE' else [1 - tmp['score'], tmp['score']]
-    #     for tmp in result
-    # ]
+    all_probabilities = [
+        [tmp['score'], 1 - tmp['score']] if tmp['label'] == 'NEGATIVE' else [1 - tmp['score'], tmp['score']]
+        for tmp in result
+    ]
 
-    sum_probabilities = [0, 0]
-
-    for chunk in chunks:
-        result = pipe(chunk)[0]  # Analyze one chunk at a time
-        probabilities = (
-            [result['score'], 1 - result['score']] if result['label'] == 'NEGATIVE'
-            else [1 - result['score'], result['score']]
-        )
-        
-        for i in range(2):  # Iterate over negative (0) and positive (1) indices
-            sum_probabilities[i] += probabilities[i]
-
-    print('Final probs:', sum_probabilities)  # Debugging
+    print('probs:', all_probabilities)  # Debugging
 
     # Calculate the average probabilities for negative and positive sentiment
-    average_probabilities = [sum_prob / len(chunks) for sum_prob in sum_probabilities]
+    average_probabilities = [sum(p[0] for p in all_probabilities) / len(chunks), sum(p[1] for p in all_probabilities) / len(chunks)]
 
     return average_probabilities
 

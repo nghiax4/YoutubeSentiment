@@ -65,12 +65,11 @@ def analyze_text_prog():
         return jsonify({'error': 'No Text provided'}), 400  # Return an error if 'text' is missing
 
     # Log the received text for debugging purposes
-    #print(f'Received Text: {text}')
+    print(f'Received Text: {text}')
 
     words_count = len(text.split(' '))
 
-    #max_word_count = 20 if words_count <= 100 else 50 if words_count <= 250 else 100 if words_count <= 250 else 150
-    max_word_count = 20
+    max_word_count = 20 if words_count <= 100 else 50 if words_count <= 250 else 100 if words_count <= 250 else 150
 
     # Perform sentiment analysis using the imported utility function
     #out = model_util.get_segmented_sentiment_wordcount(text=text, max_word_count=max_word_count)
