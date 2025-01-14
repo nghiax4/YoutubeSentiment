@@ -2,6 +2,12 @@ from typing import List
 from transformers import pipeline
 import cloudpickle
 
+# Experiment that might be able to fix "cannot instantiate 'WindowsPath' on your system"
+import pathlib
+import platform
+plt = platform.system()
+if plt != 'Windows': pathlib.WindowsPath = pathlib.PosixPath
+
 # Create a sentiment analysis pipeline using the pretrained model
 # This uses the DistilBERT model fine-tuned for sentiment analysis
 # (distilbert-base-uncased-finetuned-sst-2-english)
