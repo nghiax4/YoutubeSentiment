@@ -1,151 +1,140 @@
 from typing import List
 from transformers import pipeline
+import cloudpickle
 
 # Create a sentiment analysis pipeline using the pretrained model
-pipe = pipeline("text-classification", model="distilbert/distilbert-base-uncased-finetuned-sst-2-english")
+# This uses the DistilBERT model fine-tuned for sentiment analysis
+# (distilbert-base-uncased-finetuned-sst-2-english)
+distilbert = pipeline("text-classification", model="distilbert/distilbert-base-uncased-finetuned-sst-2-english")
 
-def chunk_text(text: str, max_word_count: int = 400, overlap: int = 20):
+# Load the custom trained Support Vector Regressor model from a file
+with open("../ml_model/svr_pipeline.pkl", "rb") as file:
+    custom_model = cloudpickle.load(file)
+
+def chunk_text(text: str, max_word_count: int = 400, overlap: int = 20) -> List[str]:
     """
-    Splits a large text into smaller chunks to fit within the model's input size.
+    Splits text into chunks of a specified maximum word count, with optional overlap between chunks.
 
-    Parameters:
+    Args:
     - text (str): The input text to be chunked.
-    - max_word_count (int): Maximum number of words per chunk (default: 400).
-    - overlap (int): Number of overlapping words between consecutive chunks (default: 50).
+    - max_word_count (int): Maximum number of words per chunk.
+    - overlap (int): Number of overlapping words between consecutive chunks.
 
     Returns:
-    - List[str]: A list of text chunks.
+    - List[str]: List of text chunks.
     """
     words = text.split(' ')
     chunks = []
     for i in range(0, len(words), max_word_count - overlap):
-        print('Somethin somethin ', ' '.join(words[i:i + max_word_count]), '\n\n')
-        # Create a chunk of words
         chunk = ' '.join(words[i:i + max_word_count])
+        print('Chunking text: ', chunk, '\n\n')  # Debugging
         chunks.append(chunk)
-
     return chunks
 
-
-def get_total_sentiment(text: str) -> List[float]:
+def get_total_sentiment(text: str, use_custom_model: bool) -> List[float]:
     """
-    Calculates the overall sentiment of a given text.
+    Calculates the overall sentiment of the text using the selected model.
 
-    Parameters:
-    - text (str): The input text to analyze.
+    Args:
+    - text (str): The input text for sentiment analysis.
+    - use_custom_model (bool): Whether to use the custom trained model.
 
     Returns:
-    - List[float]: A list containing [negative sentiment probability, positive sentiment probability].
+    - List[float]: Average probabilities for negative and positive sentiment.
     """
-    # Split the text into TINY chunks to avoid exceeding Render's memory limit
-    chunks = chunk_text(text=text, max_word_count=100, overlap=20)
-    
-    # Perform sentiment analysis on each chunk
-    result = pipe(chunks)
-    
-    # Convert model output to probabilities for negative and positive sentiment
-    all_probabilities = [
-        [tmp['score'], 1 - tmp['score']] if tmp['label'] == 'NEGATIVE' else [1 - tmp['score'], tmp['score']]
-        for tmp in result
+    # Split the text into smaller chunks for processing
+    chunks = chunk_text(text=text, max_word_count=100, overlap=50)  # TODO: Adjust parameters as needed
+
+    # Perform sentiment analysis on each chunk using the selected model
+    result = distilbert(chunks) if not use_custom_model else custom_model.predict(chunks)
+
+    # Convert model output to probabilities
+    if not use_custom_model:
+        all_probabilities = [
+            [tmp['score'], 1 - tmp['score']] if tmp['label'] == 'NEGATIVE' else [1 - tmp['score'], tmp['score']]
+            for tmp in result
+        ]
+    else:
+        all_probabilities = [[1 - pos_prob, pos_prob] for pos_prob in result]
+
+    print('Sentiment probabilities:', all_probabilities)  # Debugging
+
+    # Calculate average probabilities
+    average_probabilities = [
+        sum(p[0] for p in all_probabilities) / len(chunks),
+        sum(p[1] for p in all_probabilities) / len(chunks)
     ]
-
-    print('probs:', all_probabilities)  # Debugging
-
-    # Calculate the average probabilities for negative and positive sentiment
-    average_probabilities = [sum(p[0] for p in all_probabilities) / len(chunks), sum(p[1] for p in all_probabilities) / len(chunks)]
 
     return average_probabilities
 
-
-def get_segmented_sentiment_youtubecaption(data: List[dict], second: int) -> List[List[float]]:
+def get_segmented_sentiment_youtubecaption(data: List[dict], second: int, use_custom_model: bool) -> List[List[float]]:
     """
-    Segments text data into time-based chunks and calculates sentiment for each chunk.
+    Segments YouTube video captions into time-based chunks and analyzes their sentiment.
 
-    Parameters:
-    - data (List[dict]): A list of dictionaries, where each dictionary contains:
-        - 'start' (float): Start time of the text in seconds.
-        - 'text' (str): The text content.
-        - 'duration' (float)
-    - second (int): Time interval (in seconds) for segmenting the text.
+    Args:
+    - data (List[dict]): List of caption segments with "start", "text", and "duration" fields. Note that "duration" is currently unused.
+    - second (int): Time duration for each segment in seconds.
+    - use_custom_model (bool): Whether to use the custom trained model.
 
     Returns:
-    - List[List[float]]: A list where each element contains:
-        - Negative sentiment probability (float).
-        - Positive sentiment probability (float).
-        - Start time of the segment (float).
+    - List[List[float]]: List of sentiment probabilities with start times.
     """
-    chunks = []  # Stores the segmented text
-    start_time_of_chunk = []  # Stores the start time of each segment
+    chunks = []  # Stores text segments
+    start_time_of_chunk = []  # Stores start times of segments
 
     for i in data:
-        # Determine the index of the segment based on the start time
-        idx = int(i['start'] / second)
+        # Determine segment index by start time; "duration" is not used in this logic
+        idx = int(i['start'] / second)  # Determine segment index by start time
 
-        # Ensure the chunks list has enough space for the current segment
+        # Ensure the chunk lists are long enough
         while idx >= len(chunks):
             chunks.append('')
             start_time_of_chunk.append(-1)
 
-        # Append the text to the appropriate segment
+        # Append text to the appropriate segment
         chunks[idx] += i['text'] + ' '
-        # Record the start time of the segment if it hasn't been set yet
         if start_time_of_chunk[idx] == -1:
             start_time_of_chunk[idx] = i['start']
 
-    # Perform sentiment analysis for each text segment
-    all_probabilities = [get_total_sentiment(chunk) for chunk in chunks]
+    # Perform sentiment analysis for each segment
+    all_probabilities = [
+        get_total_sentiment(text=chunk, use_custom_model=use_custom_model)
+        for chunk in chunks
+    ]
 
-    # Combine sentiment probabilities and start times into the final output
+    # Combine results with start times
     return [
         [all_probabilities[i][0], all_probabilities[i][1], start_time_of_chunk[i]]
         for i in range(len(chunks))
     ]
 
-def get_segmented_sentiment_wordcount(text: str, max_word_count: int) -> List[List[float]]:
-    # Use chunk_text to split the text into segments
+def get_segmented_sentiment_wordcount(text: str, max_word_count: int, use_custom_model: bool) -> List[List[float]]:
+    """
+    Segments text into word-based chunks and analyzes their sentiment.
+
+    Args:
+    - text (str): Input text to analyze.
+    - max_word_count (int): Maximum number of words per chunk.
+    - use_custom_model (bool): Whether to use the custom trained model.
+
+    Returns:
+    - List[List[float]]: List of sentiment probabilities with starting word indices.
+    """
+    # Split the text into chunks
     chunks = chunk_text(text=text, max_word_count=max_word_count, overlap=0)
-    
-    # Calculate starting word indices for each chunk
+
+    # Calculate starting indices for each chunk
     words = text.split(' ')
     starting_indices = [i for i in range(0, len(words), max_word_count)]
 
     # Perform sentiment analysis for each chunk
-    all_probabilities = [get_total_sentiment(chunk) for chunk in chunks]
+    all_probabilities = [
+        get_total_sentiment(text=chunk, use_custom_model=use_custom_model)
+        for chunk in chunks
+    ]
 
-    # Combine sentiment probabilities with starting indices
+    # Combine results with starting indices
     return [
         [all_probabilities[i][0], all_probabilities[i][1], starting_indices[i]]
         for i in range(len(chunks))
     ]
-
-def get_segmented_sentiment_wordcount_two(text: str, max_word_count: int) -> List[List[float]]:
-    """
-    Segments the input text into chunks based on a word count limit,
-    analyzes sentiment for each chunk, and combines the results with starting indices.
-
-    Parameters:
-    - text (str): The input text to analyze.
-    - max_word_count (int): Maximum number of words per chunk.
-
-    Returns:
-    - List[List[float]]: A list of [negative probability, positive probability, starting index].
-    """
-    words = text.split(' ')  # Split text into words for indexing
-    results = []             # Final list to store results
-
-    # Iterate over chunks and calculate sentiment probabilities
-    for i in range(0, len(words), max_word_count):
-        # Create the chunk for the current segment
-        chunk = ' '.join(words[i:i + max_word_count])
-
-        # Perform sentiment analysis using pipe
-        result = pipe(chunk)[0]  # Analyze one chunk at a time
-        probabilities = (
-            [result['score'], 1 - result['score']] if result['label'] == 'NEGATIVE'
-            else [1 - result['score'], result['score']]
-        )
-
-        # Append the sentiment probabilities along with the starting index
-        results.append([probabilities[0], probabilities[1], i])
-
-    return results
